@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 
@@ -15,6 +16,13 @@ const (
 
 type server struct {
 	orders.UnimplementedOrderServerServer
+}
+
+func (*server) PlaceOrder(context.Context, *orders.Order) (*orders.OrderConfirmation, error) {
+	return &orders.OrderConfirmation{
+		OrderID: "1",
+		Total:   3.33,
+	}, nil
 }
 
 func main() {
