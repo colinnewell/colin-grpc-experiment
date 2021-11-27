@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
 	"net"
 
@@ -23,6 +25,22 @@ func (*server) PlaceOrder(context.Context, *orders.Order) (*orders.OrderConfirma
 		OrderID: "1",
 		Total:   3.33,
 	}, nil
+}
+
+func (*server) PlaceOrderLines(stream orders.Store_PlaceOrderLinesServer) error {
+	for {
+		l, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&orders.OrderConfirmation{})
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s x %d", l.Product, l.Quantity)
+	}
+	// receive the lines
+	// then send and close?
+	return nil
 }
 
 func main() {
