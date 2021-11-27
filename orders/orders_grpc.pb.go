@@ -14,88 +14,159 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// OrderServerClient is the client API for OrderServer service.
+// StoreClient is the client API for Store service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type OrderServerClient interface {
+type StoreClient interface {
 	PlaceOrder(ctx context.Context, in *Order, opts ...grpc.CallOption) (*OrderConfirmation, error)
+	PlaceOrderLines(ctx context.Context, opts ...grpc.CallOption) (Store_PlaceOrderLinesClient, error)
 }
 
-type orderServerClient struct {
+type storeClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewOrderServerClient(cc grpc.ClientConnInterface) OrderServerClient {
-	return &orderServerClient{cc}
+func NewStoreClient(cc grpc.ClientConnInterface) StoreClient {
+	return &storeClient{cc}
 }
 
-func (c *orderServerClient) PlaceOrder(ctx context.Context, in *Order, opts ...grpc.CallOption) (*OrderConfirmation, error) {
+func (c *storeClient) PlaceOrder(ctx context.Context, in *Order, opts ...grpc.CallOption) (*OrderConfirmation, error) {
 	out := new(OrderConfirmation)
-	err := c.cc.Invoke(ctx, "/orders.OrderServer/PlaceOrder", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/orders.Store/PlaceOrder", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// OrderServerServer is the server API for OrderServer service.
-// All implementations must embed UnimplementedOrderServerServer
+func (c *storeClient) PlaceOrderLines(ctx context.Context, opts ...grpc.CallOption) (Store_PlaceOrderLinesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Store_ServiceDesc.Streams[0], "/orders.Store/PlaceOrderLines", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &storePlaceOrderLinesClient{stream}
+	return x, nil
+}
+
+type Store_PlaceOrderLinesClient interface {
+	Send(*OrderLine) error
+	CloseAndRecv() (*OrderConfirmation, error)
+	grpc.ClientStream
+}
+
+type storePlaceOrderLinesClient struct {
+	grpc.ClientStream
+}
+
+func (x *storePlaceOrderLinesClient) Send(m *OrderLine) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *storePlaceOrderLinesClient) CloseAndRecv() (*OrderConfirmation, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(OrderConfirmation)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// StoreServer is the server API for Store service.
+// All implementations must embed UnimplementedStoreServer
 // for forward compatibility
-type OrderServerServer interface {
+type StoreServer interface {
 	PlaceOrder(context.Context, *Order) (*OrderConfirmation, error)
-	mustEmbedUnimplementedOrderServerServer()
+	PlaceOrderLines(Store_PlaceOrderLinesServer) error
+	mustEmbedUnimplementedStoreServer()
 }
 
-// UnimplementedOrderServerServer must be embedded to have forward compatible implementations.
-type UnimplementedOrderServerServer struct {
+// UnimplementedStoreServer must be embedded to have forward compatible implementations.
+type UnimplementedStoreServer struct {
 }
 
-func (UnimplementedOrderServerServer) PlaceOrder(context.Context, *Order) (*OrderConfirmation, error) {
+func (UnimplementedStoreServer) PlaceOrder(context.Context, *Order) (*OrderConfirmation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PlaceOrder not implemented")
 }
-func (UnimplementedOrderServerServer) mustEmbedUnimplementedOrderServerServer() {}
+func (UnimplementedStoreServer) PlaceOrderLines(Store_PlaceOrderLinesServer) error {
+	return status.Errorf(codes.Unimplemented, "method PlaceOrderLines not implemented")
+}
+func (UnimplementedStoreServer) mustEmbedUnimplementedStoreServer() {}
 
-// UnsafeOrderServerServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to OrderServerServer will
+// UnsafeStoreServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to StoreServer will
 // result in compilation errors.
-type UnsafeOrderServerServer interface {
-	mustEmbedUnimplementedOrderServerServer()
+type UnsafeStoreServer interface {
+	mustEmbedUnimplementedStoreServer()
 }
 
-func RegisterOrderServerServer(s grpc.ServiceRegistrar, srv OrderServerServer) {
-	s.RegisterService(&OrderServer_ServiceDesc, srv)
+func RegisterStoreServer(s grpc.ServiceRegistrar, srv StoreServer) {
+	s.RegisterService(&Store_ServiceDesc, srv)
 }
 
-func _OrderServer_PlaceOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Store_PlaceOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Order)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OrderServerServer).PlaceOrder(ctx, in)
+		return srv.(StoreServer).PlaceOrder(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/orders.OrderServer/PlaceOrder",
+		FullMethod: "/orders.Store/PlaceOrder",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServerServer).PlaceOrder(ctx, req.(*Order))
+		return srv.(StoreServer).PlaceOrder(ctx, req.(*Order))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// OrderServer_ServiceDesc is the grpc.ServiceDesc for OrderServer service.
+func _Store_PlaceOrderLines_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(StoreServer).PlaceOrderLines(&storePlaceOrderLinesServer{stream})
+}
+
+type Store_PlaceOrderLinesServer interface {
+	SendAndClose(*OrderConfirmation) error
+	Recv() (*OrderLine, error)
+	grpc.ServerStream
+}
+
+type storePlaceOrderLinesServer struct {
+	grpc.ServerStream
+}
+
+func (x *storePlaceOrderLinesServer) SendAndClose(m *OrderConfirmation) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *storePlaceOrderLinesServer) Recv() (*OrderLine, error) {
+	m := new(OrderLine)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// Store_ServiceDesc is the grpc.ServiceDesc for Store service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var OrderServer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "orders.OrderServer",
-	HandlerType: (*OrderServerServer)(nil),
+var Store_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "orders.Store",
+	HandlerType: (*StoreServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "PlaceOrder",
-			Handler:    _OrderServer_PlaceOrder_Handler,
+			Handler:    _Store_PlaceOrder_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "PlaceOrderLines",
+			Handler:       _Store_PlaceOrderLines_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "orders/orders.proto",
 }

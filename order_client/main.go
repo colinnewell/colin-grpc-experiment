@@ -27,7 +27,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	client := orders.NewOrderServerClient(conn)
+	client := orders.NewStoreClient(conn)
 	o := orders.Order{
 		OrderRef: "MyOrder1",
 		Address:  "London",
@@ -40,4 +40,17 @@ func main() {
 		log.Fatalf("Failed to place order: %s", err)
 	}
 	log.Printf("%s: %f", r.GetOrderID(), r.GetTotal())
+
+	cl, err := client.PlaceOrderLines(context.TODO())
+	if err != nil {
+		log.Fatalf("Failed to place order lines: %s", err)
+	}
+	if err := cl.Send(&orders.OrderLine{}); err != nil {
+		log.Fatalf("Failed to place order lines: %s", err)
+	}
+	recv, err := cl.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Failed to close off order: %s", err)
+	}
+	log.Printf("%s: %f", recv.GetOrderID(), recv.GetTotal())
 }

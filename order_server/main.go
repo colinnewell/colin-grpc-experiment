@@ -15,7 +15,7 @@ const (
 )
 
 type server struct {
-	orders.UnimplementedOrderServerServer
+	orders.UnimplementedStoreServer
 }
 
 func (*server) PlaceOrder(context.Context, *orders.Order) (*orders.OrderConfirmation, error) {
@@ -31,7 +31,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	orders.RegisterOrderServerServer(s, &server{})
+	orders.RegisterStoreServer(s, &server{})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

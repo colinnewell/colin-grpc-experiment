@@ -4,14 +4,20 @@ package orders;
 
 option go_package = "github.com/colinnewell/grpc-experiment/orders";
 
-service OrderServer {
+service Store {
     rpc PlaceOrder (Order) returns (OrderConfirmation) {}
+    rpc PlaceOrderLines (stream OrderLine) returns (OrderConfirmation) {}
 }
 
 message Order {
     string orderRef = 1;
     string address = 2;
     string notes = 3;
+}
+
+message OrderLine {
+    string product = 1;
+    string quantity = 2;
 }
 
 message OrderConfirmation {
