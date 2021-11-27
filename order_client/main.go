@@ -16,8 +16,8 @@ const (
 )
 
 func main() {
-	conn,
-		err := grpc.Dial(address,
+	conn, err := grpc.Dial(
+		address,
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 		grpc.WithTimeout(timeout),
